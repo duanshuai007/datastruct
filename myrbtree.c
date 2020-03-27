@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 
 #define RED     0
 #define BLACK   1
@@ -157,6 +158,8 @@ static void rbtree_insert(RBRoot *root, Node *node)
         root->node = node;           // 情况1：若y是空节点，则将node设为根
     }
 
+    node->left = NULL;
+    node->right = NULL;
     //2.设置节点颜色为红色
     node->color = RED;
 
@@ -187,6 +190,7 @@ static void rbtree_insert_fixup(RBRoot *root, Node *node)
             //case 1叔节点是红色
             Node *uncle = gparent->right;
             if (uncle && rb_is_red(uncle)) {
+                printf("uncle:[red][right]!\n");
                 rb_set_black(uncle);
                 rb_set_black(parent);
                 rb_set_red(gparent);
@@ -195,21 +199,30 @@ static void rbtree_insert_fixup(RBRoot *root, Node *node)
             }
             //case 2:叔节点是黑色，且当前节点是右子节点
             if (parent->right == node) {
+                printf("uncle:[black][right]-curnode:[right]!\n");
+#if 0
                 Node *temp;
                 rbtree_left_rotate(root, parent);
                 temp = parent;
                 parent = node;
                 node = temp;
+#else
+                node = parent;
+                rbtree_left_rotate(root, node);
+#endif
+            } else {
+                //case 3:叔节点是黑色，并且当前节点是左子节点
+                printf("uncle:[black][right]-curnode:[left]!\n");
+                rb_set_black(parent);
+                rb_set_red(gparent);
+                rbtree_right_rotate(root, gparent);
             }
-            //case 3:叔节点是黑色，并且当前节点是左子节点
-            rb_set_black(parent);
-            rb_set_red(gparent);
-            rbtree_right_rotate(root, gparent);
-        }
+        } //end of "if (parent == gparent->left) {"
         else {
             //case 1:叔节点是红色
             Node *uncle = gparent->left;
             if (uncle && rb_is_red(uncle)) {
+                printf("uncle:[red][left]!\n");
                 rb_set_black(uncle);
                 rb_set_black(parent);
                 rb_set_red(gparent);
@@ -218,16 +231,24 @@ static void rbtree_insert_fixup(RBRoot *root, Node *node)
             }
             //case 2:叔节点是黑色，且当前节点是左子节点
             if (parent->left == node) {
+#if 0
                 Node *temp;
                 rbtree_right_rotate(root, parent);
                 temp = parent;
                 parent = node;
                 node = temp;
+#else
+                printf("uncle:[black][left]-curnode:[left]!\n");
+                node = parent;
+                rbtree_right_rotate(root, node);
+#endif
+            } else {
+                //case 3:
+                printf("uncle:[black][left]-curnode:[left]!\n");
+                rb_set_black(parent);
+                rb_set_red(gparent);
+                rbtree_left_rotate(root, gparent);
             }
-            //case 3:
-            rb_set_black(parent);
-            rb_set_red(gparent);
-            rbtree_left_rotate(root, gparent);
         }
     }
 
@@ -276,8 +297,35 @@ int main(void)
         return -1;
     }
 
+    const int NUM = 20;
+
     printf("start test!\n");
 
+    int numarray[100];
+
+    for (int i = 0; i < NUM; i++)
+        numarray[i] = i;
+
+    int p1, p2, temp;
+    srand(time(0));
+    for(int i = NUM - 1; i > 0; i--) {
+        p1 = i;
+        p2 = rand() % i;
+        temp = numarray[p1];
+        numarray[p1] = numarray[p2];
+        numarray[p2] = temp;
+    }
+    
+    printf("insert:");
+    for (int i = 0; i < NUM; i++) {
+        printf(" %d", numarray[i]);
+    }
+    printf("\r\n");
+
+    for (int i = 0; i < NUM; i++) {
+        insert_rbtree(root, numarray[i]);
+    }
+#if 0
     insert_rbtree(root, 1);
     insert_rbtree(root, 3);
     insert_rbtree(root, 96);
@@ -290,7 +338,7 @@ int main(void)
     insert_rbtree(root, 88);
     insert_rbtree(root, 9);
 
+#endif
     print_rbtree(root);
-
     return 0;
 }
