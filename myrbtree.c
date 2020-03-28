@@ -32,6 +32,9 @@ typedef struct {
 
 static void rbtree_insert_fixup(RBRoot *root, Node *node);
 
+static void rbtree_delete_fixup(RBRoot *root, Node *node, Node *parent);
+//static void rbtree_delete_fixup(RBRoot *root, Node *node);
+
 /*
  * 对红黑树的节点(x)进行左旋转
  *
@@ -255,6 +258,265 @@ static void rbtree_insert_fixup(RBRoot *root, Node *node)
     rb_set_black(root->node);
 }
 
+/*
+    前继节点:表示比当前节点小的最大值
+    后继节点:表示比当前节点大的最小值
+ */
+#if 0
+static void rbtree_remove(RBRoot *root, Node *node)
+{
+    Node *x, *y;
+
+    if ((NULL == node->left) || (NULL == node->right)) {
+        //0 or 1 child
+        y = node;
+    } else {
+        // 2 child
+        //将node的后记节点给y
+        Node *replace = node;
+        replace = replace->right;
+        while (replace->left != NULL)
+            replace = replace->left;
+
+        if (node->parent != NULL) {
+            if (node->parent->left == node)
+                node->parent->left = replace;
+            else
+                node->parent->right = replace;
+        } else {
+            root->node = replace;
+        }
+        y = replace;
+    }
+
+    if (NULL != y->left)
+        x = y->left;
+    else
+        x = y->right;
+    
+    x->parent = y->parent;
+    //case 1: y的父节点为空，设置x位根节点
+    if (NULL == y->parent)
+        root->node = x;
+    else if (y == y->parent->left) 
+        y->parent->left = x;
+    else if (y == y->parent->right)
+        y->parent->right = y;
+
+    if (y != node)
+        node->key = y->key;
+
+    if (y->color == BLACK)
+        rbtree_delete_fixup(root, x);
+}
+
+static void rbtree_delete_fixup(RBRoot * root, Node *x)
+{
+    while (!x && x != root->node && x->color == BLACK) {
+        if (x == x->parent->left) {
+            Node *w = x->parent->right;
+            if (w->color == RED) {
+                w->color = BLACK;
+                x->parent->color = RED;
+                rbtree_left_rotate(root, x->parent);
+                w = x->parent->right;
+            } else if ((!w->left || w->left->color == BLACK) 
+                   && (!w->right || w->right->color == BLACK)) {
+                w->color = RED;
+                x = x->parent;
+            } else {
+                if (!w->right || w->right->color == BLACK) {
+                    w->left->color = BLACK;
+                    w->color = RED;
+                    rbtree_right_rotate(root, w);
+                    w = x->parent->right;
+                }
+                w->color = x->parent->color;
+                x->parent->color = BLACK;
+                w->right->color = BLACK;
+                rbtree_left_rotate(root, x->parent);
+                x = root->node;
+            }
+        } else {
+            Node *w = x->parent->left;
+            if (w->color == RED) {
+                w->color = BLACK;
+                x->parent->color = RED;
+                rbtree_right_rotate(root, x->parent);
+                w = x->parent->left;
+            } else if ((!w->left || w->left->color == BLACK) 
+                   && (!w->right || w->right->color == BLACK)) {
+                w->color = RED;
+                x = x->parent;
+            } else {
+                if (!w->left || w->left->color == BLACK) {
+                    w->right->color = BLACK;
+                    w->color = RED;
+                    rbtree_left_rotate(root, w);
+                    w = x->parent->left;
+                }
+                w->color = x->parent->color;
+                x->parent->color = BLACK;
+                w->left->color = BLACK;
+                rbtree_right_rotate(root, x->parent);
+                x = root->node;
+            }       
+        }
+    
+    }
+}
+
+#else
+static void rbtree_remove(RBRoot *root, Node *node)
+{
+    Node *child, *parent;
+    int color;
+
+    if ((NULL == node->left) || (NULL == node->right)) {
+        //0 or 1 child
+        if (NULL != node->left)
+            child = node->left;
+        else 
+            child = node->right;
+
+        parent = node->parent;
+
+        color = node->color;
+        if (child)
+            child->parent = parent;
+        if (parent) {
+            if (parent->left == node) 
+                parent->left = child;
+            else
+                parent->right = child;
+        } else {
+            root->node = child;
+        }
+        if (color == BLACK) 
+            rbtree_delete_fixup(root, child, parent);
+    } else {
+        //2 child
+        Node *replace = node;
+        replace = replace->right;
+        while (NULL != replace->left)
+            replace = replace->left;
+
+        if (rb_parent(node)) {
+            if (rb_parent(node)->left == node) {
+                rb_parent(node)->left = replace;
+            } else {
+                rb_parent(node)->right = replace;
+            }
+        } else {
+            root->node = replace;
+        }
+
+        child = replace->right;
+        parent = rb_parent(replace);
+        color = rb_color(replace);
+
+        if (parent == node) {
+            parent = replace;
+        } else {
+            if (child)
+                rb_set_parent(child, parent);
+            parent->left = child;
+
+            replace->right = node->right;
+            rb_set_parent(node->right, replace);
+        }
+
+        replace->parent = node->parent;
+        replace->color = node->color;
+        replace->left = node->left;
+        node->left->parent = replace;
+
+        if (color == BLACK)
+            rbtree_delete_fixup(root, child, parent);
+    }
+
+    free(node);
+}
+
+static void rbtree_delete_fixup(RBRoot *root, Node *node, Node *parent)
+{
+    Node *other;
+    while ((!node || rb_is_black(node)) && node != root->node) {
+        if (parent->left == node) {
+            other = parent->right;
+            if (rb_is_red(other)) {
+                //case 1:x的兄弟节点w是红色
+                rb_set_black(other);
+                rb_set_red(parent);
+                rbtree_left_rotate(root, parent);
+                other = parent->right;
+            }
+            if ((!other->left || rb_is_black(other->left)) &&
+                (!other->right || rb_is_black(other->right))) {
+                //case 2:x的兄弟节点w是黑色，并且w的左孩子是黑色，右孩子是黑色
+                rb_set_red(other);
+                node = parent;
+                parent = rb_parent(node);
+            } else {
+                if (!other->right || rb_is_black(other->right)) {
+                    //case 3:x的兄弟节点w是黑色，并且w的左孩子是红色，右孩子是黑色
+                    rb_set_black(other->left);
+                    rb_set_red(other);
+                    rbtree_right_rotate(root, other);
+                    other = parent->right;
+                }
+                //case 4:case 3:x的兄弟节点w是黑色，并且w的右孩子是红色，右孩子是任意色
+                rb_set_color(other, rb_color(parent));
+                rb_set_black(parent);
+                rb_set_black(other->right);
+                rbtree_left_rotate(root, parent);
+                node = root->node;
+                break;
+            }
+        } else {
+            other = parent->left;
+            if (rb_is_red(other))
+            {
+                // Case 1: x的兄弟w是红色的
+                rb_set_black(other);
+                rb_set_red(parent);
+                rbtree_right_rotate(root, parent);
+                other = parent->left;
+            }
+            if ((!other->left || rb_is_black(other->left)) &&
+                (!other->right || rb_is_black(other->right)))
+            {
+                // Case 2: x的兄弟w是黑色，且w的俩个孩子也都是黑色的
+                rb_set_red(other);
+                node = parent;
+                parent = rb_parent(node);
+            }
+            else
+            {
+                if (!other->left || rb_is_black(other->left))
+                {
+                    // Case 3: x的兄弟w是黑色的，并且w的左孩子是红色，右孩子为黑色。
+                    rb_set_black(other->right);
+                    rb_set_red(other);
+                    rbtree_left_rotate(root, other);
+                    other = parent->left;
+                }
+                // Case 4: x的兄弟w是黑色的；并且w的右孩子是红色的，左孩子任意颜色。
+                rb_set_color(other, rb_color(parent));
+                rb_set_black(parent);
+                rb_set_black(other->left);
+                rbtree_right_rotate(root, parent);
+                node = root->node;
+                break;
+            }
+        }
+    }
+
+    if (node)
+        rb_set_black(node);
+}
+#endif
+
 static void rbtree_print(RBTree tree, Type key, int direction)
 {
     if(tree != NULL)
@@ -273,6 +535,15 @@ void print_rbtree(RBRoot *root)
 {
     if (root!=NULL && root->node!=NULL)
         rbtree_print(root->node, root->node->key, 0);
+}
+
+static Node* search(Node *x, int key) {
+    if (x == NULL || x->key == key)
+        return x;
+    if (key < x->key) 
+        return search(x->left, key);
+    else
+        return search(x->right, key);
 }
 
 void insert_rbtree(RBRoot * root, int key) 
@@ -337,8 +608,18 @@ int main(void)
     insert_rbtree(root, 57);
     insert_rbtree(root, 88);
     insert_rbtree(root, 9);
-
 #endif
+    print_rbtree(root);
+
+    Node *delnode = search(root->node, 10);
+    printf("search node finish!\n");
+    if (delnode) {
+        printf("i will remove node\n");
+        rbtree_remove(root, delnode);
+    } else {
+        printf("can't find node\n");
+    }
+
     print_rbtree(root);
     return 0;
 }
