@@ -1,0 +1,28 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/duanshuai/Downloads/Linux/datastruct/queue/main.c
+queue.h
+/Users/duanshuai/Downloads/Linux/datastruct/queue/queue.h
+string.h
+-
+
+/Users/duanshuai/Downloads/Linux/datastruct/queue/queue.c
+queue.h
+/Users/duanshuai/Downloads/Linux/datastruct/queue/queue.h
+string.h
+-
+
+/Users/duanshuai/Downloads/Linux/datastruct/queue/queue.h
+stdio.h
+-
+stdlib.h
+-
+stdbool.h
+-
+
