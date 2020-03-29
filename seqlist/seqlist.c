@@ -61,7 +61,8 @@ int InsertList(seqlist_t *l, int i, DataType *e)
     else {
         for (j = l->maxsize - 1; j > i; j--)
             l->list[j] = l->list[j-1];
-        l->list[i] = *e;
+        //l->list[i] = *e;
+        memcpy(&l->list[i], e, sizeof(DataType));
         l->cursize += 1;
         return 0;
     }
@@ -138,6 +139,7 @@ int main(void)
             dat->boy = false;
             InsertList(&list, i, dat);
             free(dat);
+            dat = NULL;
         }
     }
 
