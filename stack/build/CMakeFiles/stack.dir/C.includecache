@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/duanshuai/Downloads/Linux/datastruct/stack/main.c
+stack.h
+/Users/duanshuai/Downloads/Linux/datastruct/stack/stack.h
+string.h
+-
+
+/Users/duanshuai/Downloads/Linux/datastruct/stack/stack.h
+stdio.h
+-
+stdlib.h
+-
+stdbool.h
+-
+

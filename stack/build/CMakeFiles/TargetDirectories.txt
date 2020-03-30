@@ -1,0 +1,3 @@
+/Users/duanshuai/Downloads/Linux/datastruct/stack/build/CMakeFiles/rebuild_cache.dir
+/Users/duanshuai/Downloads/Linux/datastruct/stack/build/CMakeFiles/edit_cache.dir
+/Users/duanshuai/Downloads/Linux/datastruct/stack/build/CMakeFiles/stack.dir
