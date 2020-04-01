@@ -32,13 +32,6 @@ void DeInitStack(StackType *p)
 
 bool StackPush(StackType *p, void *msg)
 {
-#if 0
-    printf("itemsize=%d, sizeof(msg)=%d, sizeof(*msg)=%d\n", p->itemsize, sizeof(msg), sizeof(*msg));
-    if (sizeof(*msg) != p->itemsize) {
-        printf("send item error!\n");
-        return false;
-    }
-#endif
     if (p->Lock)
         return false;
 
